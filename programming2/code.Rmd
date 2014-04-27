@@ -1,0 +1,6 @@
+1. Introduction
+===============
+The purpose of this project is to build a model that predicts the price of a diamond based on a number of variables. 
+
+2. Dataset
+==========
