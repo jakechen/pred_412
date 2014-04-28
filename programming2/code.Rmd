@@ -1,6 +1,79 @@
 1. Introduction
 ===============
-The purpose of this project is to build a model that predicts the price of a diamond based on a number of variables. 
+The purpose of this project is to build a model that predicts the price of a diamond based on a number of variables. According to the project description:
+
+_"This individual assignment asks students to use a training-and-test regimen to compare alternative regression methods, such as, traditional multiple regression, tree-structured regression, and neural networks."_
+
+As such, the focus of this project will be on prediction accuracy and less on inferential studies.
 
 2. Dataset
 ==========
+This dataset consists of 7 variables. The target variable we are aiming for is __price__, a continuous integer. Our __6 explanatory variables__ are split into 2 categories: diamond characteristic and diamond vendor. The diamond characteristics are stated in the project description as the 4Cs: carat, color, clarity, and cut. In total there are __425 obervations__ in this dataset.
+
+3. Analysis & Results
+=====================
+3.1 Data Preparation
+---------------
+### 3.1.1 Import Data
+First we import the data via the provided CSV file.
+```{r}
+diamonds <- read.csv("two_months_salary.csv")
+```
+Let's take a quick look at the data:
+```{r}
+head(diamonds)
+str(diamonds)
+summary(diamonds)
+```
+We can see above that all __7 variables__ are present, the __datatypes have been set__ properly, and __there are no missing values__.
+
+### 3.1.2 Data Modification
+According to the provided analysis, it will be helpful to derive some variables initially. These variables specifically are __logprice__ (log transformation of the price variable) and __internet__ (whether or not the vendor is an online vendor). 
+```{r}
+diamonds$logprice <- log(diamonds$price)
+diamonds$internet <- ifelse((diamonds$channel == "Internet"),2,1)
+diamonds$internet <- factor(diamonds$internet,levels=c(1,2),labels=c("NO","YES"))
+```
+Let's take a look at the dataset again to verify the additions:
+```{r}
+str(diamonds)
+```
+
+3.2 Graphical Summary
+---------------------
+### 3.2.1 Provided Analysis
+The graphical summary code was provided to us in advance. The code and the analysis are shown below:
+```{r, fig.width=6, fig.height=6}
+library(lattice)
+xyplot(jitter(price) ~ jitter(carat) | channel + cut, 
+       data = diamonds,
+        aspect = 1, 
+        layout = c(3, 2),
+        strip=function(...) strip.default(..., style=1),
+        xlab = "Size or Weight of Diamond (carats)", 
+        ylab = "Price")
+```
+To summarize the analyses provided with the project:
+- price and carat are numeric variables with a strong relationship
+- cut and channel are factor variables related to price
+
+### 3.2.2 Multivariate EDA on Price
+It may also help to analyze each explanatory variable and its relationship to the target variable, price. For this portion we will be using the ggplot2 package.
+```{r}
+#library(ggplot2)
+attach(diamonds) # attach dataset for easier selection
+```
+
+#### 3.2.2.1 Carat
+```{r, fig.width=4, fig.height=4}
+plot(carat, price)
+```
+It looks as if there's a __linear relationship between carat and price__. However, the price spreads out quite a bit as the carat number increases so this relationships is not for certain.
+
+```{r}
+detach(diamonds)
+```
+
+3.3 Modeling: Iteration 1
+-------------------------
+The first model we will apply is a mulitple regression. This method is quick, easy, and will provide us 
