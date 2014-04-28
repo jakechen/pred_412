@@ -120,13 +120,6 @@ The graphical summary code was provided to us in advance. The code and the analy
 
 ```r
 library(lattice)
-```
-
-```
-## Warning: package 'lattice' was built under R version 3.0.3
-```
-
-```r
 xyplot(jitter(price) ~ jitter(carat) | channel + cut, data = diamonds, aspect = 1, 
     layout = c(3, 2), strip = function(...) strip.default(..., style = 1), xlab = "Size or Weight of Diamond (carats)", 
     ylab = "Price")
@@ -146,7 +139,12 @@ library(ggplot2)
 ```
 
 ```
-## Error: package or namespace load failed for 'ggplot2'
+## 
+## Attaching package: 'ggplot2'
+## 
+## The following object is masked _by_ '.GlobalEnv':
+## 
+##     diamonds
 ```
 
 ```r
@@ -159,9 +157,7 @@ attach(diamonds)  # attach dataset for easier selection
 qplot(carat, price)
 ```
 
-```
-## Error: could not find function "qplot"
-```
+![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8.png) 
 
 It looks as if there's a **linear relationship between carat and price**. However, the price spreads out quite a bit as the carat number increases so this relationships is not for certain.
 
@@ -171,15 +167,13 @@ It looks as if there's a **linear relationship between carat and price**. Howeve
 plot(color, price, xlab = "color", ylab = "price")
 ```
 
-![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9.png) 
+![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-91.png) 
 
 ```r
 ggplot(diamonds, aes(x = price, colour = color)) + geom_density()
 ```
 
-```
-## Error: could not find function "ggplot"
-```
+![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-92.png) 
 
 There doesn't seem to be much of a relationship between color and price according to these plots.
 
@@ -189,15 +183,13 @@ There doesn't seem to be much of a relationship between color and price accordin
 plot(clarity, price, xlab = "clarity", ylab = "price")
 ```
 
-![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10.png) 
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-101.png) 
 
 ```r
 ggplot(diamonds, aes(x = price, colour = channel)) + geom_density()
 ```
 
-```
-## Error: could not find function "ggplot"
-```
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-102.png) 
 
 While we would expect the price to be higher when clarity is better (i.e. closer to 1), this relationship is not obviously evident in the plots above.
 
@@ -207,15 +199,13 @@ While we would expect the price to be higher when clarity is better (i.e. closer
 plot(cut, price, xlab = "cut", ylab = "price")
 ```
 
-![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11.png) 
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-111.png) 
 
 ```r
 ggplot(diamonds, aes(x = price, colour = cut)) + geom_density()
 ```
 
-```
-## Error: could not find function "ggplot"
-```
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-112.png) 
 
 Again there's no immediate distinction in prices between the classes here.
 
@@ -225,15 +215,13 @@ Again there's no immediate distinction in prices between the classes here.
 plot(channel, price, xlab = "channel", ylab = "price")
 ```
 
-![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12.png) 
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-121.png) 
 
 ```r
 ggplot(diamonds, aes(x = price, colour = channel)) + geom_density()
 ```
 
-```
-## Error: could not find function "ggplot"
-```
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-122.png) 
 
 And no clear distinction between the prices here either.
 
@@ -279,13 +267,13 @@ print(lm.rmse)
 ```
 
 ```
-## [1] 1196
+## [1] 1516
 ```
 
 **Results**  
-As we see above, the stock multiple regression gives us an RMSE of **1195.7791**. This is without any adjustments to the formula, no outlier removal, or any other modifications to the data. This value will provide a baseline to compare the other methods to.
+As we see above, the stock multiple regression gives us an RMSE of **1516.2657**. This is without any adjustments to the formula, no outlier removal, or any other modifications to the data. This value will provide a baseline to compare the other methods to.
 
-### Decision Tree
+### 3.4.2 Decision Tree
 In addition to multiple regressions, the project also recommends using a tree-structured regression as a method of prediction. The decision tree is usually used for classification, or in other words the prediction of nominal variables. However, we can apply the tree and see how it performs compared to the stock multiple regression.
 
 ```r
@@ -298,11 +286,11 @@ print(tree.rmse)
 ```
 
 ```
-## [1] 1527
+## [1] 1864
 ```
 
 **Results**  
-When using the decision tree, our resulting RMSE when predicting the test dataset is **1527.4259**. This number is greater than the RMSE from the multiple regression. This should not be surprising given that the decision tree is a classifier. Let's look at the respective plots for both of the models to really see the difference:
+When using the decision tree, our resulting RMSE when predicting the test dataset is **1864.3306**. This number is greater than the RMSE from the multiple regression. This should not be surprising given that the decision tree is a classifier. Let's look at the respective plots for both of the models to really see the difference:
 
 ```r
 plot(lm.fit, main = "Multiple Regression Fitted Values")
@@ -322,4 +310,4 @@ In the decision tree plot we can see that the values fall into distinct lines. T
 =============
 For this project we were tasked with predicting the price of a diamond based on 6 explanatory variables. We used two methods for this: multiple regression and decision trees. The multiple regression model is the first choice for this type of problem due to its output of continuous variables. We used this method as the baseline. The second method we used is the decision tree. This method is primarily used for classification problems, so its application to this project is purely to test its performance.
 
-The results of the two models are not surprising. The linear regression had an RMSE of 1195.7791 and the decision tree had a higher RMSE of 1527.4259. These RMSE of the decision tree is understandably higher than that of the linear regression because the decision tree cannot output continuous variables. As a result, there are inherent errors introduced when we apply the tree to this type of problem.
+The results of the two models are not surprising. The linear regression had an RMSE of 1516.2657 and the decision tree had a higher RMSE of 1864.3306. These RMSE of the decision tree is understandably higher than that of the linear regression because the decision tree cannot output continuous variables. As a result, there are inherent errors introduced when we apply the tree to this type of problem.
