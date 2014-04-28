@@ -237,7 +237,7 @@ ggplot(diamonds, aes(x = price, colour = channel)) + geom_density()
 
 And no clear distinction between the prices here either.
 
-**Summary**
+**Summary**  
 Besides carat none of the other variables have a clear and obvious impact on the price of the diamond.
 
 
@@ -261,11 +261,11 @@ test <- diamonds[rand == 5, ]
 3.4 Modeling: Iteration 1
 -------------------------
 ### 3.4.1 Multiple Regression
-The first model we will apply is a multiple regression. We will start off with 1st order relationships between the varialbes. This method is quick, easy, and will provide us with some useful insights.
+The first method we will apply is a multiple regression. We will start off with 1st order relationships between the varialbes. This method is quick, easy, and will provide us with some useful insights.
 
 ```r
 lm <- lm(price ~ carat + color + clarity + cut + channel + store, train)
-lm.fit <- predict.lm(lm, test)
+lm.fit <- predict(lm, test)
 ```
 
 ```
@@ -279,8 +279,41 @@ print(lm.rmse)
 ```
 
 ```
-## [1] 1790
+## [1] 1570
 ```
 
-**Results**
-As we see above, the stock multiple regression gives us an RMSE of **1790.06**. This is without any adjustments to the formula, no outlier removal, or any other modifications to the data. This value will provide a baseline to compare the other methods to.
+**Results**  
+As we see above, the stock multiple regression gives us an RMSE of **1569.6363**. This is without any adjustments to the formula, no outlier removal, or any other modifications to the data. This value will provide a baseline to compare the other methods to.
+
+### Decision Tree
+In addition to multiple regressions, the project also recommends using a tree-structured regression as a method of prediction. The decision tree is usually used for classification, or in other words the prediction of nominal variables. However, we can apply the tree and see how it performs compared to the stock multiple regression.
+
+```r
+library(rpart)
+tree <- rpart(price ~ carat + color + clarity + cut + channel + store, data = train)
+tree.fit <- predict(tree, test)
+tree.results <- cbind(test$price, tree.fit)
+tree.rmse <- sqrt(mean((tree.results[, 2] - tree.results[, 1])^2))
+print(tree.rmse)
+```
+
+```
+## [1] 1674
+```
+
+**Results**  
+When using the decision tree, our resulting RMSE when predicting the test dataset is **1674.0132**. This number is greater than the RMSE from the multiple regression. This should not be surprising given that the decision tree is a classifier. Let's look at the respective plots for both of the models to really see the difference:
+
+```r
+plot(lm.fit, main = "Multiple Regression Fitted Values")
+```
+
+![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-171.png) 
+
+```r
+plot(tree.fit, main = "Decision Tree Fitted Values")
+```
+
+![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-172.png) 
+
+In the decision tree plot we can see that the values fall into distinct lines. This is because decision trees, as classifiers, output only nominal values. As a result, the residuals will generally be greater than that of the multiple regression model.

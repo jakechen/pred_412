@@ -122,16 +122,37 @@ train <- diamonds[rand<5,]
 test <- diamonds[rand==5,]
 ```
 
-3.4 Modeling: Iteration 1
--------------------------
+3.4 Modeling
+------------
 ### 3.4.1 Multiple Regression
-The first model we will apply is a multiple regression. We will start off with 1st order relationships between the varialbes. This method is quick, easy, and will provide us with some useful insights.
+The first method we will apply is a multiple regression. We will start off with 1st order relationships between the varialbes. This method is quick, easy, and will provide us with some useful insights.
 ```{r}
-lm <- lm(price ~ carat + color + clarity + cut + channel + store, train)
-lm.fit <- predict.lm(lm, test)
+lm <- lm(price~carat+color+clarity+cut+channel+store, train)
+lm.fit <- predict(lm, test)
 lm.results <- cbind(test$price, lm.fit)
 lm.rmse <- sqrt(mean((lm.results[,2]-lm.results[,1])^2))
 print(lm.rmse)
 ```
 **Results**  
 As we see above, the stock multiple regression gives us an RMSE of **`r lm.rmse`**. This is without any adjustments to the formula, no outlier removal, or any other modifications to the data. This value will provide a baseline to compare the other methods to.
+
+### Decision Tree
+In addition to multiple regressions, the project also recommends using a tree-structured regression as a method of prediction. The decision tree is usually used for classification, or in other words the prediction of nominal variables. However, we can apply the tree and see how it performs compared to the stock multiple regression.
+```{r}
+library(rpart)
+tree <- rpart(price~carat+color+clarity+cut+channel+store, data=train)
+tree.fit <- predict(tree, test)
+tree.results <- cbind(test$price, tree.fit)
+tree.rmse <- sqrt(mean((tree.results[,2]-tree.results[,1])^2))
+print(tree.rmse)
+```
+**Results**  
+When using the decision tree, our resulting RMSE when predicting the test dataset is **`r tree.rmse`**. This number is greater than the RMSE from the multiple regression. This should not be surprising given that the decision tree is a classifier. Let's look at the respective plots for both of the models to really see the difference:
+```{r, fig.width=4, fig.height=4}
+plot(lm.fit, main='Multiple Regression Fitted Values')
+plot(tree.fit, main='Decision Tree Fitted Values')
+```
+In the decision tree plot we can see that the values fall into distinct lines. This is because decision trees, as classifiers, output only nominal values. As a result, the residuals will generally be greater than that of the multiple regression model.
+
+4. Conclusion
+=============
