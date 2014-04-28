@@ -136,7 +136,7 @@ print(lm.rmse)
 **Results**  
 As we see above, the stock multiple regression gives us an RMSE of **`r lm.rmse`**. This is without any adjustments to the formula, no outlier removal, or any other modifications to the data. This value will provide a baseline to compare the other methods to.
 
-### Decision Tree
+### 3.4.2 Decision Tree
 In addition to multiple regressions, the project also recommends using a tree-structured regression as a method of prediction. The decision tree is usually used for classification, or in other words the prediction of nominal variables. However, we can apply the tree and see how it performs compared to the stock multiple regression.
 ```{r}
 library(rpart)
@@ -156,3 +156,6 @@ In the decision tree plot we can see that the values fall into distinct lines. T
 
 4. Conclusion
 =============
+For this project we were tasked with predicting the price of a diamond based on 6 explanatory variables. We used two methods for this: multiple regression and decision trees. The multiple regression model is the first choice for this type of problem due to its output of continuous variables. We used this method as the baseline. The second method we used is the decision tree. This method is primarily used for classification problems, so its application to this project is purely to test its performance.
+
+The results of the two models are not surprising. The linear regression had an RMSE of `r lm.rmse` and the decision tree had a higher RMSE of `r tree.rmse`. These RMSE of the decision tree is understandably higher than that of the linear regression because the decision tree cannot output continuous variables. As a result, there are inherent errors introduced when we apply the tree to this type of problem.

@@ -258,8 +258,8 @@ test <- diamonds[rand == 5, ]
 ```
 
 
-3.4 Modeling: Iteration 1
--------------------------
+3.4 Modeling
+------------
 ### 3.4.1 Multiple Regression
 The first method we will apply is a multiple regression. We will start off with 1st order relationships between the varialbes. This method is quick, easy, and will provide us with some useful insights.
 
@@ -279,11 +279,11 @@ print(lm.rmse)
 ```
 
 ```
-## [1] 1570
+## [1] 1196
 ```
 
 **Results**  
-As we see above, the stock multiple regression gives us an RMSE of **1569.6363**. This is without any adjustments to the formula, no outlier removal, or any other modifications to the data. This value will provide a baseline to compare the other methods to.
+As we see above, the stock multiple regression gives us an RMSE of **1195.7791**. This is without any adjustments to the formula, no outlier removal, or any other modifications to the data. This value will provide a baseline to compare the other methods to.
 
 ### Decision Tree
 In addition to multiple regressions, the project also recommends using a tree-structured regression as a method of prediction. The decision tree is usually used for classification, or in other words the prediction of nominal variables. However, we can apply the tree and see how it performs compared to the stock multiple regression.
@@ -298,11 +298,11 @@ print(tree.rmse)
 ```
 
 ```
-## [1] 1674
+## [1] 1527
 ```
 
 **Results**  
-When using the decision tree, our resulting RMSE when predicting the test dataset is **1674.0132**. This number is greater than the RMSE from the multiple regression. This should not be surprising given that the decision tree is a classifier. Let's look at the respective plots for both of the models to really see the difference:
+When using the decision tree, our resulting RMSE when predicting the test dataset is **1527.4259**. This number is greater than the RMSE from the multiple regression. This should not be surprising given that the decision tree is a classifier. Let's look at the respective plots for both of the models to really see the difference:
 
 ```r
 plot(lm.fit, main = "Multiple Regression Fitted Values")
@@ -317,3 +317,9 @@ plot(tree.fit, main = "Decision Tree Fitted Values")
 ![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-172.png) 
 
 In the decision tree plot we can see that the values fall into distinct lines. This is because decision trees, as classifiers, output only nominal values. As a result, the residuals will generally be greater than that of the multiple regression model.
+
+4. Conclusion
+=============
+For this project we were tasked with predicting the price of a diamond based on 6 explanatory variables. We used two methods for this: multiple regression and decision trees. The multiple regression model is the first choice for this type of problem due to its output of continuous variables. We used this method as the baseline. The second method we used is the decision tree. This method is primarily used for classification problems, so its application to this project is purely to test its performance.
+
+The results of the two models are not surprising. The linear regression had an RMSE of 1195.7791 and the decision tree had a higher RMSE of 1527.4259. These RMSE of the decision tree is understandably higher than that of the linear regression because the decision tree cannot output continuous variables. As a result, there are inherent errors introduced when we apply the tree to this type of problem.
