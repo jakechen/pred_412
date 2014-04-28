@@ -75,7 +75,13 @@ summary(diamonds)
 ##                    (Other)   : 49
 ```
 
-We can see above that all __7 variables__ are present, the __datatypes have been set__ properly, and __there are no missing values__.
+We can see above that all __7 variables__ are present and __there are no missing values__. However, the __datatypes have not been set__ properly, specifically "color" and "clarity". Let's take care of this now.
+
+```r
+diamonds$color <- as.factor(diamonds$color)
+diamonds$clarity <- as.factor(diamonds$clarity)
+```
+
 
 ### 3.1.2 Data Modification
 According to the provided analysis, it will be helpful to derive some variables initially. These variables specifically are __logprice__ (log transformation of the price variable) and __internet__ (whether or not the vendor is an online vendor). 
@@ -96,8 +102,8 @@ str(diamonds)
 ```
 ## 'data.frame':	425 obs. of  9 variables:
 ##  $ carat   : num  0.826 0.996 1.07 1.07 1.01 0.66 0.701 0.97 0.74 2.04 ...
-##  $ color   : int  4 5 4 7 8 3 4 8 1 5 ...
-##  $ clarity : int  7 6 7 7 6 4 8 6 9 6 ...
+##  $ color   : Factor w/ 9 levels "1","2","3","4",..: 4 5 4 7 8 3 4 8 1 5 ...
+##  $ clarity : Factor w/ 9 levels "2","3","4","5",..: 6 5 6 6 5 3 7 5 8 5 ...
 ##  $ cut     : Factor w/ 2 levels "Ideal","Not Ideal": 1 1 1 2 2 1 1 2 2 2 ...
 ##  $ channel : Factor w/ 3 levels "Independent",..: 1 1 1 1 1 1 1 1 1 1 ...
 ##  $ store   : Factor w/ 12 levels "Ashford","Ausmans",..: 7 7 7 7 7 7 7 7 7 7 ...
@@ -126,30 +132,113 @@ xyplot(jitter(price) ~ jitter(carat) | channel + cut, data = diamonds, aspect = 
     ylab = "Price")
 ```
 
-![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5.png) 
+![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6.png) 
 
-To summarize the provided analyses:
+To summarize the analyses provided with the project:
 - price and carat are numeric variables with a strong relationship
 - cut and channel are factor variables related to price
 
 ### 3.2.2 Multivariate EDA on Price
-It may also help to analyze each explanatory variable and its relationship to the target variable, price. First let's load the ggplot2 package as well.
+It may also help to analyze each explanatory variable and its relationship to the target variable, price. For this portion we will be using the ggplot2 package as well as the default plotting system.
 
 ```r
-# library(ggplot2)
+library(ggplot2)
+```
+
+```
+## Error: package or namespace load failed for 'ggplot2'
+```
+
+```r
 attach(diamonds)  # attach dataset for easier selection
 ```
 
-
-#### 3.2.2.1 Carat
+**Carat**
 
 ```r
-plot(carat, price)
+qplot(carat, price)
 ```
 
-![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-7.png) 
+```
+## Error: could not find function "qplot"
+```
 
-It looks as if there's a __linear relationship between carat and price__. However, the price spreads out quite a bit as the carat number increases so this relationships is not for certain.
+It looks as if there's a **linear relationship between carat and price**. However, the price spreads out quite a bit as the carat number increases so this relationships is not for certain.
+
+**Color**
+
+```r
+plot(color, price, xlab = "color", ylab = "price")
+```
+
+![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9.png) 
+
+```r
+ggplot(diamonds, aes(x = price, colour = color)) + geom_density()
+```
+
+```
+## Error: could not find function "ggplot"
+```
+
+There doesn't seem to be much of a relationship between color and price according to these plots.
+
+**Clarity**
+
+```r
+plot(clarity, price, xlab = "clarity", ylab = "price")
+```
+
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10.png) 
+
+```r
+ggplot(diamonds, aes(x = price, colour = channel)) + geom_density()
+```
+
+```
+## Error: could not find function "ggplot"
+```
+
+While we would expect the price to be higher when clarity is better (i.e. closer to 1), this relationship is not obviously evident in the plots above.
+
+**Cut**
+
+```r
+plot(cut, price, xlab = "cut", ylab = "price")
+```
+
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11.png) 
+
+```r
+ggplot(diamonds, aes(x = price, colour = cut)) + geom_density()
+```
+
+```
+## Error: could not find function "ggplot"
+```
+
+Again there's no immediate distinction in prices between the classes here.
+
+**Channel**
+
+```r
+plot(channel, price, xlab = "channel", ylab = "price")
+```
+
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12.png) 
+
+```r
+ggplot(diamonds, aes(x = price, colour = channel)) + geom_density()
+```
+
+```
+## Error: could not find function "ggplot"
+```
+
+And no clear distinction between the prices here either.
+
+**Summary**
+Besides carat none of the other variables have a clear and obvious impact on the price of the diamond.
 
 
 ```r
@@ -157,6 +246,41 @@ detach(diamonds)
 ```
 
 
-3.3 Modeling: Iteration 1
+3.3 Modeling Preparation
+------------------------
+### Split Test/Train datasets
+Before we begin modeling, let's split out the testing and training datasets at a 20/80 split.
+
+```r
+rand <- sample(1:5, nrow(diamonds), replace = T)
+train <- diamonds[rand < 5, ]
+test <- diamonds[rand == 5, ]
+```
+
+
+3.4 Modeling: Iteration 1
 -------------------------
-The first model we will apply is a mulitple regression. This method is quick, easy, and will provide us 
+### 3.4.1 Multiple Regression
+The first model we will apply is a multiple regression. We will start off with 1st order relationships between the varialbes. This method is quick, easy, and will provide us with some useful insights.
+
+```r
+lm <- lm(price ~ carat + color + clarity + cut + channel + store, train)
+lm.fit <- predict.lm(lm, test)
+```
+
+```
+## Warning: prediction from a rank-deficient fit may be misleading
+```
+
+```r
+lm.results <- cbind(test$price, lm.fit)
+lm.rmse <- sqrt(mean((lm.results[, 2] - lm.results[, 1])^2))
+print(lm.rmse)
+```
+
+```
+## [1] 1790
+```
+
+**Results**
+As we see above, the stock multiple regression gives us an RMSE of **1790.06**. This is without any adjustments to the formula, no outlier removal, or any other modifications to the data. This value will provide a baseline to compare the other methods to.
