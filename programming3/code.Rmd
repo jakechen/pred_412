@@ -106,7 +106,7 @@ plot(tree)
 ```
 ### 3.3.2 Test the model
 ```{r}
-tree.pred <- predict.rpart(tree, test)
+tree.pred <- predict(tree, test)
 ```
 #### 3.3.2.1 Confusion table
 ```{r}
