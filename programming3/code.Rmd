@@ -1,0 +1,415 @@
+Prompt
+======
+This individual assignment asks students to use a statistical experiment to compare alternative classification methods. Students are encouraged to install packages with data-adaptive, machine learning algorithms. Ensemble methods (committee machines) may also be employed. Various criteria, tabular, and graphical (including receiver operating characteristic curves) are used for evaluating classifiers. Try at least one traditional and one machine learning method.
+
+1. Load Preparation
+===================
+```{r}
+library(MMST)
+data(spambase)
+```
+
+2. EDA
+======
+```{r}
+str(spambase)
+head(spambase)
+summary(spambase)
+```
+
+## 2.1 Between Explanatory Vars
+Let's look at the relationships using a correlogram. Due to the large sample size, it might be best to take a smaller sample first to not kill the machine.
+```{r}
+require(corrgram)
+mask <- sample(c(T,F), nrow(spambase), replace=T, prob=c(0.1, 0.9))
+temp <- spambase[mask,]
+corrgram(temp, upper.panel=panel.conf, lower.panel=panel.pie)
+```
+There seems to be heavy multicollinearity between x857 through technology (minus data). Especially concerning is the relationship between "x857" and "x415". Let's run a correlogram on this smaller slice using the full dataset.
+```{r}
+corrgram(spambase[,25:40], upper.panel=panel.conf, lower.panel=panel.pie)
+```
+We see that "x857" and "x415" are indeed 1:1 correlated with one another. It doesn't makes sense to keep this redundancy.
+
+***Aside: Remove detected redundancy***
+```{r}
+spambase <- spambase[,-34]
+```
+
+Still, there remains some strong correlations within multiple variables. Let's keep this in mind while we continue exploring the data.
+
+## Vs Target
+```{r, fig.width=4, fig.height=3}
+require(ggplot2)
+for(i in 1:nrow(temp)){
+  p <- ggplot(temp, aes(x=temp[,i], fill=class, alpha=0.5)) +
+    geom_density() + 
+    labs(title=names(temp)[i], x=names(temp)[i])
+  print(p)
+}
+```
+There seems to be some variables that have different densities between the classes. These variables may be useful when put into the classification models.
+
+
+3. Modeling Iter. 1
+===================
+3.1 Split Test/Train
+--------------------
+```{r}
+mask <- sample(c(T,F), nrow(spambase), replace=T, prob=c(0.8, 0.2))
+train <- spambase[mask,]
+test <- spambase[!mask,]
+```
+Are there enough test cases in the test set?
+```{r}
+table(test$class)
+```
+There are.
+
+3.2 Logistic Regression
+-----------------------
+### 3.2.1 Fit the model
+```{r}
+fit <- glm(class~., family=binomial, train[-57])
+summary(fit)
+```
+### 3.2.2 Test the model
+```{r}
+fit.pred <- predict(fit, test, type='response')
+```
+#### 3.2.2.1 Confusion table using 0.5 cutoff rate
+```{r}
+y_hat <- 1*(fit.pred>0.5)
+t <- table(test$classdigit, y_hat)
+addmargins(t)
+```
+It's not too bad. False positive is 22/925 and false negative is 39/925. This is only at 0.5 cutoff though. Let's use an ROC Curve instead.
+#### 3.2.2.2 Using ROC Curve
+```{r}
+require(ROCR)
+pred <- prediction(fit.pred, test$classdigit)
+perf <- performance(pred, 'tpr', 'fpr')
+plot(perf)
+auc.tmp <- performance(pred,"auc")
+print(fit.auc <- as.numeric(auc.tmp@y.values))
+```
+The AUC is very solid @ 0.9696
+
+3.3 Decision Tree
+-----------------
+### 3.3.1 Fit the model
+```{r}
+require(rpart)
+tree <- rpart(class~., train[-57])
+tree
+plot(tree)
+```
+### 3.3.2 Test the model
+```{r}
+tree.pred <- predict(tree, test)
+```
+#### 3.3.2.1 Confusion table
+```{r}
+y_hat <- predict(tree, test, type='class')
+t <- table(test$class, y_hat)
+addmargins(t)
+```
+The decision tree performs well, but not as well as the logistic regression. It has 45 FP and 48 FN.
+#### 3.4.2.2 Using ROC Curve
+```{r}
+require(ROCR)
+pred <- prediction(as.matrix(tree.pred)[,2], test$classdigit)
+perf <- performance(pred, 'tpr', 'fpr')
+plot(perf)
+auc.tmp <- performance(pred,"auc")
+print(fit.auc <- as.numeric(auc.tmp@y.values))
+```
+The AUC is decently good @ 0.9073
+
+3.4 Random Forest (default)
+-----------------
+### 3.4.1 Fit the model
+```{r}
+require(randomForest)
+rf <- randomForest(class~., train[-57])
+rf
+```
+### 3.4.2 Test the model
+#### 3.4.2.1 Confusion table
+```{r}
+y_hat <- predict(rf, test)
+t <- table(test$class, y_hat)
+addmargins(t)
+```
+The random forest performs better than the others, with a FP or 10 and FN of 28.
+#### 3.3.2.2 Using ROC Curve
+```{r}
+require(ROCR)
+rf.pred <- predict(rf, test, type='prob')
+pred <- prediction(as.matrix(rf.pred)[,2], test$classdigit)
+perf <- performance(pred, 'tpr', 'fpr')
+plot(perf)
+auc.tmp <- performance(pred,"auc")
+print(fit.auc <- as.numeric(auc.tmp@y.values))
+```
+The ROC for the random forest is great with its AUC of 0.9904!
+
+3.5 Random Forest (tweaked)
+-----------------
+### 3.5.1 Fit the model
+```{r}
+require(randomForest)
+rf <- randomForest(class~., train[-57], mtry=15)
+rf
+```
+### 3.5.2 Test the model
+#### 3.5.2.1 Confusion table
+```{r}
+y_hat <- predict(rf, test)
+t <- table(test$class, y_hat)
+addmargins(t)
+```
+#### 3.5.2.2 Using ROC Curve
+```{r}
+require(ROCR)
+rf.pred <- predict(rf, test, type='prob')
+pred <- prediction(as.matrix(rf.pred)[,2], test$classdigit)
+perf <- performance(pred, 'tpr', 'fpr')
+plot(perf)
+auc.tmp <- performance(pred,"auc")
+print(fit.auc <- as.numeric(auc.tmp@y.values))
+```
+The tweaked random forest works about as well as the default. There's probably no point to modifying the default parameters.
+
+
+4. Modeling Iter. 2
+===================
+This time we'll first apply a PCA to the dataset.
+4.1 PCA
+-------
+### 4.1.1 Build PC mappings
+```{r}
+pc <- princomp(spambase[,-57:-58])
+summary(pc)
+plot(pc)
+```
+Just 3 PCs capture as much as 99.99% of the variance. Let's just take these three columns to speed up the modeling process.
+#### 4.1.2 Build train and test sets
+```{r}
+train.pc <- as.data.frame(predict(pc, train))
+train.pc <- train.pc[,1:3]
+train.pc <- cbind(train.pc, train$class)
+names(train.pc)[4] <- 'class'
+test.pc <- as.data.frame(predict(pc, test))
+test.pc <- test.pc[,1:3]
+test.pc <- cbind(test.pc, test$class)
+names(test.pc)[4] <- 'class'
+```
+
+4.2 Logistic Regression
+-----------------------
+### 4.2.1 Fit the model
+```{r}
+fit <- glm(class~., family=binomial, train.pc)
+summary(fit)
+```
+### 4.2.2 Test the model
+```{r}
+fit.pred <- predict(fit, test.pc, type='response')
+```
+#### 4.2.2.1 Confusion table using 0.5 cutoff rate
+```{r}
+y_hat <- 1*(fit.pred>0.5)
+t <- table(test.pc$class, y_hat)
+addmargins(t)
+```
+The performance of the logistic regression decreased drasitically after a PCA. It's FP is now 31 and its FN is now a staggering 193... Perhaps the ROC will have more information.
+#### 4.2.2.2 Using ROC Curve
+```{r}
+require(ROCR)
+pred <- prediction(fit.pred, test.pc$class)
+perf <- performance(pred, 'tpr', 'fpr')
+plot(perf)
+auc.tmp <- performance(pred,"auc")
+print(fit.auc <- as.numeric(auc.tmp@y.values))
+```
+The AUC is now 0.8417 compared to 0.9696 from before. Given that a PCA should be more accurate, I'm starting to be concerned that the logistic may actually be overfitting. Let's see the other algorithms to see what happens.
+
+4.3 Decision Tree
+-----------------
+### 4.3.1 Fit the model
+```{r}
+require(rpart)
+tree <- rpart(class~., train.pc)
+tree
+plot(tree)
+```
+### 4.3.2 Test the model
+```{r}
+tree.pred <- predict(tree, test.pc)
+```
+#### 4.3.2.1 Confusion table
+```{r}
+y_hat <- predict(tree, test.pc, type='class')
+t <- table(test.pc$class, y_hat)
+addmargins(t)
+```
+The decision tree has also decreased in accuracy. We see the same same increase in FN (48 -> 127) as we did in logistic regression. Perhaps PCA wasn't the best idea after all, as it seems to be losing information.
+#### 4.3.2.2 Using ROC Curve
+```{r}
+require(ROCR)
+pred <- prediction(as.matrix(tree.pred)[,2], test.pc$class)
+perf <- performance(pred, 'tpr', 'fpr')
+plot(perf)
+auc.tmp <- performance(pred,"auc")
+print(fit.auc <- as.numeric(auc.tmp@y.values))
+```
+AUC has also decreased to 0.82 compared to the previous 0.9073.
+
+4.4 Random Forest
+-----------------
+### 4.4.1 Fit the model
+```{r}
+require(randomForest)
+rf <- randomForest(class~., train.pc)
+rf
+```
+### 4.4.2 Test the model
+#### 4.4.2.1 Confusion table
+```{r}
+y_hat <- predict(rf, test.pc)
+t <- table(test.pc$class, y_hat)
+addmargins(t)
+```
+Even the RF is decreasing in accuracy, from a FP or 10 and FN of 28 to 67 and 83.
+#### 4.4.2.2 Using ROC Curve
+```{r}
+require(ROCR)
+rf.pred <- predict(rf, test.pc, type='prob')
+pred <- prediction(as.matrix(rf.pred)[,2], test.pc$class)
+perf <- performance(pred, 'tpr', 'fpr')
+plot(perf)
+auc.tmp <- performance(pred,"auc")
+print(fit.auc <- as.numeric(auc.tmp@y.values))
+```
+The ROC for the random forest has decreased to 0.888 from 0.9904.
+
+
+5. Modeling Iter. 3
+===================
+The model building was horrible when only 3 CPs were included. Seems a lot of information was lost. When we dig into the linear equations, this information loss makes sense. The top 3 PCs are constructed only using the 'crla', 'crll', and 'crtt' attributes. This means that if we use the top 3 CPs, the information provided by the other variables are completely ignored. We also see that in terms of magnitude, these three variables are in the thousands whereas the other variabes are in the ones and tens. This can explain the large amount of variance provided by these 3 variables.
+
+Let's include a few more PCs to try to bring in some of the information.
+
+5.1 PCA
+-------
+### 5.1.1 Build PC mappings
+```{r}
+pc <- princomp(spambase[,-57:-58])
+summary(pc)
+plot(pc)
+```
+
+#### 5.1.2 Build train and test sets
+```{r}
+train.pc <- as.data.frame(predict(pc, train))
+train.pc <- train.pc[,1:15]
+train.pc <- cbind(train.pc, train$class)
+names(train.pc)[16] <- 'class'
+test.pc <- as.data.frame(predict(pc, test))
+test.pc <- test.pc[,1:15]
+test.pc <- cbind(test.pc, test$class)
+names(test.pc)[16] <- 'class'
+```
+
+5.2 Logistic Regression
+-----------------------
+### 5.2.1 Fit the model
+```{r}
+fit <- glm(class~., family=binomial, train.pc)
+summary(fit)
+```
+### 5.2.2 Test the model
+```{r}
+fit.pred <- predict(fit, test.pc, type='response')
+```
+#### 5.2.2.1 Confusion table using 0.5 cutoff rate
+```{r}
+y_hat <- 1*(fit.pred>0.5)
+t <- table(test.pc$class, y_hat)
+addmargins(t)
+```
+Now the FP is 34 and the FN and 40. Still not as good as initially. Maybe it's overfitting or we still lost information in the PCA.
+#### 5.2.2.2 Using ROC Curve
+```{r}
+require(ROCR)
+pred <- prediction(fit.pred, test.pc$class)
+perf <- performance(pred, 'tpr', 'fpr')
+plot(perf)
+auc.tmp <- performance(pred,"auc")
+print(fit.auc <- as.numeric(auc.tmp@y.values))
+```
+The AUC is now 0.9614 compared to the 0.9696 initially. This is better than the previous model with 3 PCs but still not as good as the initial raw model.
+
+5.3 Decision Tree
+-----------------
+### 5.3.1 Fit the model
+```{r}
+require(rpart)
+tree <- rpart(class~., train.pc)
+tree
+plot(tree)
+```
+### 5.3.2 Test the model
+```{r}
+tree.pred <- predict(tree, test.pc)
+```
+#### 5.3.2.1 Confusion table
+```{r}
+y_hat <- predict(tree, test.pc, type='class')
+t <- table(test.pc$class, y_hat)
+addmargins(t)
+```
+The FP is now 64 with the FN at 65. Still not as good as the original.
+#### 5.3.2.2 Using ROC Curve
+```{r}
+require(ROCR)
+pred <- prediction(as.matrix(tree.pred)[,2], test.pc$class)
+perf <- performance(pred, 'tpr', 'fpr')
+plot(perf)
+auc.tmp <- performance(pred,"auc")
+print(fit.auc <- as.numeric(auc.tmp@y.values))
+```
+AUC is now 0.88 compared to the initial 0.9073.
+
+5.4 Random Forest
+-----------------
+### 5.4.1 Fit the model
+```{r}
+require(randomForest)
+rf <- randomForest(class~., train.pc)
+rf
+```
+### 5.4.2 Test the model
+#### 5.4.2.1 Confusion table
+```{r}
+y_hat <- predict(rf, test.pc)
+t <- table(test.pc$class, y_hat)
+addmargins(t)
+```
+The RF is lower in accuracy, from a FP or 10 and FN of 28 to 20 and 34. 
+#### 5.4.2.2 Using ROC Curve
+```{r}
+require(ROCR)
+rf.pred <- predict(rf, test.pc, type='prob')
+pred <- prediction(as.matrix(rf.pred)[,2], test.pc$class)
+perf <- performance(pred, 'tpr', 'fpr')
+plot(perf)
+auc.tmp <- performance(pred,"auc")
+print(fit.auc <- as.numeric(auc.tmp@y.values))
+```
+The ROC for the random forest has increase to 0.987, but it's still not as good as the initial 0.9904.
+
+6. Conclusion
+=============
+After running the PCA and taking the top 3 and 15 PCs, we still are not getting the accuracy from the initial modeling w/out PCA. Currently the default RF built on the raw data performs extremely well already and is a model that we can continue to use.
